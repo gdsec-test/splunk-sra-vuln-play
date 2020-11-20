@@ -2,14 +2,12 @@
   <div class="control-group">
     <label class="control-label">Environment<span class="required">*</span></label>
     <div class="controls">
-      <label class="radio" for="create_service_now_ticket_environment_dev">
-        <input type="radio" name="action.create_service_now_ticket.param.environment"
-          id="create_service_now_ticket_environment_dev" value="dev" checked />
+      <label class="radio" for="main_environment_dev">
+        <input type="radio" name="action.main.param.environment" id="main_environment_dev" value="dev" checked />
         Dev
       </label>
-      <label class="radio" for="create_service_now_ticket_environment_prod">
-        <input type="radio" name="action.create_service_now_ticket.param.environment"
-          id="create_service_now_ticket_environment_prod" value="prod" />
+      <label class="radio" for="main_environment_prod">
+        <input type="radio" name="action.main.param.environment" id="main_environment_prod" value="prod" />
         Production
       </label>
       <span class="help-block">
@@ -19,29 +17,26 @@
   </div>
 
   <div class="control-group">
-    <label class="control-label" for="create_service_now_ticket_ticket_title">Title<span class="required">*</span>
+    <label class="control-label" for="main_ticket_title">Title<span class="required">*</span>
     </label>
     <div class="controls">
-      <input type="text" name="action.create_service_now_ticket.param.ticket_title"
-        id="create_service_now_ticket_ticket_title" />
+      <input type="text" name="action.main.param.ticket_title" id="main_ticket_title" />
     </div>
   </div>
 
   <div class="control-group">
-    <label class="control-label" for="create_service_now_ticket_ticket_description">Description<span
-        class="required">*</span>
+    <label class="control-label" for="main_ticket_description">Description<span class="required">*</span>
     </label>
     <div class="controls">
-      <input type="textarea" name="action.create_service_now_ticket.param.ticket_description"
-        id="create_service_now_ticket_ticket_description" />
+      <textarea name="action.main.param.ticket_description" id="main_ticket_description"></textarea>
     </div>
   </div>
 
   <div class="control-group">
-    <label class="control-label" for="create_service_now_ticket_ticket_impact">Impact<span class="required">*</span>
+    <label class="control-label" for="main_ticket_impact">Impact<span class="required">*</span>
     </label>
     <div class="controls">
-      <select name="action.create_service_now_ticket.param.ticket_impact" id="create_service_now_ticket_ticket_impact">
+      <select name="action.main.param.ticket_impact" id="main_ticket_impact">
         <option value="3">3</option>
         <option value="2">2</option>
         <option value="1">1</option>
@@ -50,11 +45,10 @@
   </div>
 
   <div class="control-group">
-    <label class="control-label" for="create_service_now_ticket_ticket_urgency">Urgency<span class="required">*</span>
+    <label class="control-label" for="main_ticket_urgency">Urgency<span class="required">*</span>
     </label>
     <div class="controls">
-      <select name="action.create_service_now_ticket.param.ticket_urgency"
-        id="create_service_now_ticket_ticket_urgency">
+      <select name="action.main.param.ticket_urgency" id="main_ticket_urgency">
         <option value="3">3</option>
         <option value="2">2</option>
         <option value="1">1</option>
@@ -63,12 +57,10 @@
   </div>
 
   <div class="control-group">
-    <label class="control-label" for="create_service_now_ticket_ticket_criticality">Criticality<span
-        class="required">*</span>
+    <label class="control-label" for="main_ticket_criticality">Criticality<span class="required">*</span>
     </label>
     <div class="controls">
-      <select name="action.create_service_now_ticket.param.ticket_criticality"
-        id="create_service_now_ticket_ticket_criticality">
+      <select name="action.main.param.ticket_criticality" id="main_ticket_criticality">
         <option value="Low">Low</option>
         <option value="Medium">Medium</option>
         <option value="High">High</option>
@@ -78,25 +70,24 @@
   </div>
 
   <div class="control-group">
-    <label class="control-label" for="create_service_now_ticket_ticket_custom_tag">Custom Tag
+    <label class="control-label" for="main_ticket_custom_tag">Custom Tag
     </label>
     <div class="controls">
-      <input type="text" name="action.create_service_now_ticket.param.ticket_custom_tag"
-        id="create_service_now_ticket_ticket_custom_tag" />
+      <input type="text" name="action.main.param.ticket_custom_tag" id="main_ticket_custom_tag" />
     </div>
   </div>
 
   <div class="control-group">
     <label class="control-label">Assign to Manager?<span class="required">*</span></label>
     <div class="controls">
-      <label class="radio" for="create_service_now_ticket_assign_to_manager_yes">
-        <input type="radio" name="action.create_service_now_ticket.param.assign_to_manager"
-          id="create_service_now_ticket_assign_to_manager_yes" value="1" />
+      <label class="radio" for="main_assign_to_manager_yes">
+        <input type="radio" name="action.main.param.ticket_assign_to_manager" id="main_assign_to_manager_yes"
+          value="1" />
         Yes
       </label>
-      <label class="radio" for="create_service_now_ticket_assign_to_manager_no">
-        <input type="radio" name="action.create_service_now_ticket.param.assign_to_manager"
-          id="create_service_now_ticket_assign_to_manager_no" value="0" checked />
+      <label class="radio" for="main_assign_to_manager_no">
+        <input type="radio" name="action.main.param.ticket_assign_to_manager" id="main_assign_to_manager_no" value="0"
+          checked />
         No
       </label>
     </div>

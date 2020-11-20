@@ -1,10 +1,13 @@
-import asyncio
-import logging
-import json
-import sys
 import traceback
+import json
+import logging
+import asyncio
+import sys
+import os
 
-from src import app
+sys.path.insert(0, os.environ['SPLUNK_HOME'] +
+                '/etc/apps/splunk-sra-vuln-play/lib')
+
 
 REQUIRED_CONFIG_FIELDS = [
     'environment',
@@ -43,9 +46,13 @@ def config_is_valid(_config):
 
 
 async def main():
+    from src import app
+
     splunk_entity_module = None
     splunk_rest_module = None
     flags = []
+    payload = None
+
     if len(sys.argv) > 1 and sys.argv[1] == "--execute":
         # initialize logging
         logging.getLogger().addHandler(logging.StreamHandler(sys.stderr))
@@ -53,18 +60,17 @@ async def main():
 
         import splunk.entity as splunk_entity_module
         import splunk.rest as splunk_rest_module
-        payload = json.load(sys.stdin.read())
-    elif len(sys.argv) == 2 and sys.argv[1] == "--local":
-        with open("test.json") as file:
+        payload = json.loads(sys.stdin.read())
+    elif sys.argv[1] == "--local":
+        with open(sys.argv[2]) as file:
             raw_payload = file.read()
-            # print(file.read())
             payload = json.loads(raw_payload)
-        flags = ["--local"]
+        flags = sys.argv
 
-    if not config_is_valid(payload['configuration']):
+    if payload is not None and not config_is_valid(payload['configuration']):
         return sys.exit(2)
 
-    return sys.exit(await app.run(payload, None, None, flags))
+    return sys.exit(await app.run(payload, splunk_entity_module, splunk_rest_module, flags))
 
 
 if __name__ == '__main__':

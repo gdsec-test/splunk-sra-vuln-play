@@ -2,7 +2,7 @@ import hashlib
 import json
 import requests
 
-APPNAMESPACE = "sra_vuln_play_to_snow"
+APPNAMESPACE = "splunk_sra_vuln_play"
 
 STATE_COLLECTION_NAME = "gd_" + APPNAMESPACE
 
@@ -33,7 +33,7 @@ class KVStore():
             )
         except Exception as e:
             raise Exception(
-                f"Could not get {APPNAMESPACE} credentials from splunk. Error: {str(e)}")
+                f"Could not get {APPNAMESPACE} credentials from splunk.  Error: {str(e)}")
 
         # return first set of credentials
         for c in entities.values():

@@ -61,7 +61,7 @@ async def run(payload, splunk_entity_module, splunk_rest_module, flags=[]):
 
     # create / update ticket
     await cut_tickets(service_now, kv_store, session_key,
-                      configuration, ci_map, is_running_local)
+                      configuration, ci_map, is_running_local, flags)
 
     return 0
 
@@ -141,7 +141,7 @@ def get_manager(service_now, serial_numbers):
     return manager
 
 
-async def cut_tickets(service_now, kv_store, session_key, configuration, ci_map, is_running_local):
+async def cut_tickets(service_now, kv_store, session_key, configuration, ci_map, is_running_local, flags):
     for service_team, team in ci_map.items():
         manager, vulns = itemgetter("manager", "vuln_plays")(team)
         for vuln_play_name, cis in vulns.items():
@@ -149,17 +149,20 @@ async def cut_tickets(service_now, kv_store, session_key, configuration, ci_map,
                 service_now, kv_store,
                 session_key, configuration,
                 service_team, vuln_play_name, cis,
-                manager, is_running_local
+                manager, is_running_local, flags
             )
             if not is_running_local:
                 kv_store_key = kv_store.construct_key(
                     service_team + vuln_play_name)
                 kv_store.post_state(kv_store_key, sys_id)
+            print(sys_id)
 
 
-async def upsert_ticket(service_now, kv_store, session_key, configuration, service_team, vuln_play_name, cis, manager, is_running_local):
+async def upsert_ticket(service_now, kv_store, session_key, configuration, service_team, vuln_play_name, cis, manager, is_running_local, flags):
     # check splunk for existing sys_id (team + vuln play)
     sys_id = None
+    if is_running_local and len(flags) >= 4:
+        sys_id = flags[3]
     if not is_running_local:
         kv_store_key = kv_store.construct_key(service_team + vuln_play_name)
         sys_id = kv_store.get_state(kv_store_key)
