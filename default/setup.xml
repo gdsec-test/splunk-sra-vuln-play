@@ -1,6 +1,6 @@
 <setup>
-    <block title="Splunk to Snow Ticket Action">
-        <text>Configure Splunk to Snow</text>
+    <block title="SRA Vulnerability Play Action">
+        <text>Configure SRA Vulnerability Play Action</text>
     </block>
 
     <block title="Service Account" endpoint="storage/passwords" entity="_new">

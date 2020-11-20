@@ -1,31 +1,33 @@
 # from __future__ import print_function
 
-import os
 import csv
-import json
 import gzip
+import json
+import os
 import shutil
+
 from operator import itemgetter
 
 from .ServiceNow import ServiceNow
 from .KVStore import KVStore
 from .Utils import string_0_1_to_bool
 
-from .constants import MANDATORY_CONFIG, TABLE_FIELDS
-
 VULN_PLAY_FIELD_NAME = "Vuln_Play_Name"
 SERIAL_FIELD_NAME = "Serial"
 SERVICE_TEAM_FIELD_NAME = "Svc_Team"
+
 EVENT_FIELDS = [
     VULN_PLAY_FIELD_NAME, SERIAL_FIELD_NAME, SERVICE_TEAM_FIELD_NAME
 ]
+
 MAX_CI_MANAGER_TRY = 10
 
 
-async def run(raw_payload, splunk_entity_module, splunk_rest_module, flags=[]):
+async def run(payload, splunk_entity_module, splunk_rest_module, flags=[]):
     # extra event meta ( session_key, configuration, results_file )
-    session_key, configuration, results_file_path = read_in_payload(
-        raw_payload)
+    session_key, configuration, results_file_path = itemgetter(
+        "session_key", "configuration", "results_file"
+    )(payload)
 
     # load results from file
     headers, results = load_results(results_file_path)
@@ -53,22 +55,15 @@ async def run(raw_payload, splunk_entity_module, splunk_rest_module, flags=[]):
     serial_map = construct_serial_map(header_map, results)
 
     # fetch cis <- SNOW
-    ci_map = construct_ci_map(service_now, serial_map, configuration)
+    attach_manager = string_0_1_to_bool(
+        configuration.get('ticket_assign_to_manager'))
+    ci_map = construct_ci_map(service_now, serial_map, attach_manager)
 
     # create / update ticket
     await cut_tickets(service_now, kv_store, session_key,
                       configuration, ci_map, is_running_local)
 
     return 0
-
-
-def read_in_payload(raw_payload):
-    payload = json.loads(raw_payload)
-    session_key, configuration, results_file_path = itemgetter(
-        "session_key", "configuration", "results_file"
-    )(payload)
-
-    return session_key, configuration, results_file_path
 
 
 def load_results(file_path):
@@ -117,14 +112,18 @@ def upsert_result_into_ci_map(ci_map, serial_number, vuln_play, service_team):
         ci_map[service_team] = {vuln_play: [serial_number]}
 
 
-def construct_ci_map(service_now, serial_map, configuration):
+def construct_ci_map(service_now, serial_map, attach_manager):
     ci_map = {}
     for service_team, vulns in serial_map.items():
         for vuln_play, serial_numbers in vulns.items():
             ci_map[service_team] = ci_map.get(service_team, {})
             team = ci_map[service_team]
-            team['manager'] = get_manager(
-                configuration, service_now, serial_numbers)
+
+            if attach_manager:
+                team['manager'] = get_manager(service_now, serial_numbers)
+            else:
+                team['manager'] = None
+
             team['vuln_plays'] = team.get('vuln_plays', {})
             team['vuln_plays'][vuln_play] = service_now.fetch_cis(
                 serial_numbers)
@@ -132,13 +131,12 @@ def construct_ci_map(service_now, serial_map, configuration):
     return ci_map
 
 
-def get_manager(configuration, service_now, serial_numbers):
+def get_manager(service_now, serial_numbers):
     manager = None
-    if string_0_1_to_bool(configuration.get('assign_manager')):
-        i = 0
-        while manager == None and i < len(serial_numbers) and i < MAX_CI_MANAGER_TRY:
-            manager = service_now.fetch_manager(serial_numbers[i])
-            i += 1
+    i = 0
+    while manager == None and i < len(serial_numbers) and i < MAX_CI_MANAGER_TRY:
+        manager = service_now.fetch_manager(serial_numbers[i])
+        i += 1
 
     return manager
 
@@ -146,23 +144,24 @@ def get_manager(configuration, service_now, serial_numbers):
 async def cut_tickets(service_now, kv_store, session_key, configuration, ci_map, is_running_local):
     for service_team, team in ci_map.items():
         manager, vulns = itemgetter("manager", "vuln_plays")(team)
-        for vuln_play, cis in vulns.items():
+        for vuln_play_name, cis in vulns.items():
             sys_id = await upsert_ticket(
                 service_now, kv_store,
                 session_key, configuration,
-                service_team, vuln_play, cis,
+                service_team, vuln_play_name, cis,
                 manager, is_running_local
             )
-            print(sys_id)
-            # update_kv_store(service_team, vuln_play, sys_id)
-    # kv_store.post_state(key, sys_id, state is None)
+            if not is_running_local:
+                kv_store_key = kv_store.construct_key(
+                    service_team + vuln_play_name)
+                kv_store.post_state(kv_store_key, sys_id)
 
 
-async def upsert_ticket(service_now, kv_store, session_key, configuration, service_team, vuln_play_value, cis, manager, is_running_local):
+async def upsert_ticket(service_now, kv_store, session_key, configuration, service_team, vuln_play_name, cis, manager, is_running_local):
     # check splunk for existing sys_id (team + vuln play)
     sys_id = None
     if not is_running_local:
-        kv_store_key = kv_store.construct_key(service_team + vuln_play_value)
+        kv_store_key = kv_store.construct_key(service_team + vuln_play_name)
         sys_id = kv_store.get_state(kv_store_key)
 
     ci_names = []
@@ -186,8 +185,3 @@ async def upsert_ticket(service_now, kv_store, session_key, configuration, servi
 def is_ticket_open(service_now, sys_id):
     ticket = service_now.get_ticket(sys_id)
     return ticket != None and ticket['state'] == "1"
-
-
-def update_kv_store(service_team, vuln_play, sys_id):
-    """TODO"""
-    return None

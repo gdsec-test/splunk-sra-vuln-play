@@ -1,7 +1,10 @@
-import requests
-import json
 import hashlib
-from .constants import APPNAMESPACE, STATE_COLLECTION_NAME
+import json
+import requests
+
+APPNAMESPACE = "sra_vuln_play_to_snow"
+
+STATE_COLLECTION_NAME = "gd_" + APPNAMESPACE
 
 COLLECTION_SCHEMA = {
     "field.ticket_sys_id": "string"

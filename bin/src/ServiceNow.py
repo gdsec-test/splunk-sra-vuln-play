@@ -1,27 +1,29 @@
+import aiohttp
 import asyncio
 import json
 import re
-import aiohttp
 import requests
+
 from datetime import datetime
 from dateutil.parser import parse as parse_date
+
 from .Utils import string_0_1_to_bool
-from .constants import APPNAMESPACE, STATE_COLLECTION_NAME, BASE_DOMAIN, \
-    SERVICENOW_REQUEST_HEADERS, TABLE_FIELDS, SNOW_TIME_FORMAT, \
-    PARAMETER_REGEX
+
+
+BASE_DOMAIN = 'https://godaddy'
+
+SERVICENOW_REQUEST_HEADERS = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+}
 
 MAX_URL_LENGTH = 7000
 
-SYSPARAM_FIELDS = [
-    "name", "sys_id",
-    # "u_patching_group.manager.sys_id",
-    # "sys_class_name", "ip_address"
-    # "assignment_group.name", "u_patching_group.name", "u_patching_group.manager.name", "u_patching"
-    # "u_patching_group.manager.email",
-    # "u_patching_group.u_business_service_rollup.u_product_line.u_business_unit.name"
-]
-ROOT_CAUSE = "Security.Vulnerability"
-VULNERABILITY_TYPE = "Vuln"
+SYSPARAM_FIELDS = ["name", "sys_id"]
+
+TICKET_ROOT_CAUSE = "Security.Vulnerability"
+
+TICKET_VULNERABILITY_TYPE = "Vuln"
 
 
 class ServiceNow():
@@ -113,21 +115,23 @@ class ServiceNow():
 
     def construct_post_data(self, cis, service_team, assigned_user):
         data = {
-            'short_description': self._config['title'],
-            'description': self._config['description'],
+            'short_description': self._config['ticket_title'],
+            'description': self._config['ticket_description'],
             'assignment_group': service_team,
-            'u_root_cause': ROOT_CAUSE,
-            'u_vulnerability_type': VULNERABILITY_TYPE,
-            'u_vulnerability_criticality': self._config['criticality'],
-            'urgency': self._config['urgency'],
-            'impact': self._config['impact'],
+            'u_root_cause': TICKET_ROOT_CAUSE,
+            'u_vulnerability_type': TICKET_VULNERABILITY_TYPE,
+            'u_vulnerability_criticality': self._config['ticket_criticality'],
+            'urgency': self._config['ticket_urgency'],
+            'impact': self._config['ticket_impact'],
             'u_problem_notes': 'Affected CIs\n'+"\n".join(cis)
         }
 
         if assigned_user is not None:
             data['assigned_to'] = assigned_user
-        if self._config.get('custom_tag'):
-            data["u_custom_tag"] = self._config.get('custom_tag')
+
+        custom_tag = self._config.get('ticket_custom_tag')
+        if custom_tag is not None:
+            data["u_custom_tag"] = custom_tag
 
         return data
 

@@ -1,6 +1,7 @@
-from .ServiceNow import ServiceNow
-from .KVStore import KVStore
-from . import Utils, app, constants
+from . import ServiceNow
+from . import KVStore
+from . import Utils
+from . import app
 
 
 __all__ = [
@@ -8,5 +9,5 @@ __all__ = [
     'Utils', 'ServiceNow', 'KVStore',
 
     # Modules
-    'constants', 'app'
+    'app'
 ]
