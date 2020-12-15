@@ -1,5 +1,3 @@
-# from __future__ import print_function
-
 import csv
 import gzip
 import json
@@ -63,8 +61,6 @@ async def run(payload, splunk_entity_module, splunk_rest_module, flags=[]):
 
     # create / update ticket
     await cut_tickets(service_now, kv_store, ci_map, is_running_local, flags)
-
-    print(missed_serials)
 
     if missed_serials:
         cut_bad_ticket(service_now, missed_serials, flags)
@@ -151,9 +147,6 @@ def construct_ci_map(service_now, serial_map, attach_manager):
 def find_missing_serials(team_cis, serial_numbers):
     ci_ids = [ci['serial_number'] for ci in team_cis]
 
-    print(team_cis)
-    print(serial_numbers)
-
     return list(set(serial_numbers) - set(ci_ids))
 
 
@@ -180,7 +173,6 @@ async def cut_tickets(service_now, kv_store, ci_map, is_running_local, flags):
                 kv_store_key = kv_store.construct_key(
                     service_team + vuln_play_name)
                 kv_store.post_state(kv_store_key, sys_id)
-            print(sys_id)
 
 
 def cut_bad_ticket(service_now, missed_serials, flags):
