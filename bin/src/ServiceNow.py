@@ -19,7 +19,7 @@ SERVICENOW_REQUEST_HEADERS = {
 
 MAX_URL_LENGTH = 7000
 
-SYSPARAM_FIELDS = ["name", "sys_id"]
+SYSPARAM_FIELDS = ["name", "sys_id", "serial_number"]
 
 TICKET_ROOT_CAUSE = "Security.Vulnerability"
 
@@ -69,11 +69,14 @@ class ServiceNow():
         )
 
         if response.status_code == 200:
-            return response.json()['result'][0].get('u_patching_group.manager.sys_id')
+            result = response.json()['result']
+            if len(result) > 0:
+                return result[0].get('u_patching_group.manager.sys_id')
 
         return None
 
     def fetch_cis(self, serial_numbers):
+        serial_numbers = list(serial_numbers)
         base_url = self.construct_ci_base_url()
         cis = []
         while len(serial_numbers) is not 0:
@@ -133,6 +136,19 @@ class ServiceNow():
         if custom_tag is not None:
             data["u_custom_tag"] = custom_tag
 
+        return data
+
+    def contruct_bad_ticket_data(self, description, ):
+        data = {
+            'short_description': "Vulnerability Ticket Errors",
+            'description': description,
+            'assignment_group': "ENG-SRA",
+            'u_root_cause': TICKET_ROOT_CAUSE,
+            'u_vulnerability_type': TICKET_VULNERABILITY_TYPE,
+            'u_vulnerability_criticality': "Low",
+            'urgency': "3",
+            'impact': "3"
+        }
         return data
 
     def create_ticket(self, data):

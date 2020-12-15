@@ -61,7 +61,7 @@ async def main():
         import splunk.entity as splunk_entity_module
         import splunk.rest as splunk_rest_module
         payload = json.loads(sys.stdin.read())
-    elif sys.argv[1] == "--local":
+    elif len(sys.argv) > 1 and sys.argv[1] == "--local":
         with open(sys.argv[2]) as file:
             raw_payload = file.read()
             payload = json.loads(raw_payload)

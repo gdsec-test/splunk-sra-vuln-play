@@ -33,7 +33,7 @@ class KVStore():
             )
         except Exception as e:
             raise Exception(
-                f"Could not get {APPNAMESPACE} credentials from splunk.  Error: {str(e)}")
+                f"Could not get {APPNAMESPACE} credentials from splunk. Error: {str(e)}")
 
         # return first set of credentials
         for c in entities.values():

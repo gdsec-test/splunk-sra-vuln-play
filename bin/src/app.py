@@ -5,6 +5,7 @@ import gzip
 import json
 import os
 import shutil
+import functools
 
 from operator import itemgetter
 
@@ -57,11 +58,16 @@ async def run(payload, splunk_entity_module, splunk_rest_module, flags=[]):
     # fetch cis <- SNOW
     attach_manager = string_0_1_to_bool(
         configuration.get('ticket_assign_to_manager'))
-    ci_map = construct_ci_map(service_now, serial_map, attach_manager)
+    ci_map, missed_serials = construct_ci_map(
+        service_now, serial_map, attach_manager)
 
     # create / update ticket
-    await cut_tickets(service_now, kv_store, session_key,
-                      configuration, ci_map, is_running_local, flags)
+    await cut_tickets(service_now, kv_store, ci_map, is_running_local, flags)
+
+    print(missed_serials)
+
+    if missed_serials:
+        cut_bad_ticket(service_now, missed_serials, flags)
 
     return 0
 
@@ -114,6 +120,7 @@ def upsert_result_into_ci_map(ci_map, serial_number, vuln_play, service_team):
 
 def construct_ci_map(service_now, serial_map, attach_manager):
     ci_map = {}
+    missed_serials = {}
     for service_team, vulns in serial_map.items():
         for vuln_play, serial_numbers in vulns.items():
             ci_map[service_team] = ci_map.get(service_team, {})
@@ -125,10 +132,29 @@ def construct_ci_map(service_now, serial_map, attach_manager):
                 team['manager'] = None
 
             team['vuln_plays'] = team.get('vuln_plays', {})
-            team['vuln_plays'][vuln_play] = service_now.fetch_cis(
-                serial_numbers)
+            team_cis = service_now.fetch_cis(serial_numbers)
+            team['vuln_plays'][vuln_play] = team_cis
 
-    return ci_map
+            if len(team_cis) < len(serial_numbers):
+                missed_serials[service_team] = missed_serials.get(
+                    service_team, {})
+                team_missing_cis = missed_serials[service_team]
+                not_found_serials = find_missing_serials(
+                    team_cis, serial_numbers)
+                team_missing_cis[vuln_play] = team_missing_cis.get(
+                    vuln_play, [])
+                team_missing_cis[vuln_play].extend(not_found_serials)
+
+    return ci_map, missed_serials
+
+
+def find_missing_serials(team_cis, serial_numbers):
+    ci_ids = [ci['serial_number'] for ci in team_cis]
+
+    print(team_cis)
+    print(serial_numbers)
+
+    return list(set(serial_numbers) - set(ci_ids))
 
 
 def get_manager(service_now, serial_numbers):
@@ -141,13 +167,12 @@ def get_manager(service_now, serial_numbers):
     return manager
 
 
-async def cut_tickets(service_now, kv_store, session_key, configuration, ci_map, is_running_local, flags):
+async def cut_tickets(service_now, kv_store, ci_map, is_running_local, flags):
     for service_team, team in ci_map.items():
         manager, vulns = itemgetter("manager", "vuln_plays")(team)
         for vuln_play_name, cis in vulns.items():
             sys_id = await upsert_ticket(
                 service_now, kv_store,
-                session_key, configuration,
                 service_team, vuln_play_name, cis,
                 manager, is_running_local, flags
             )
@@ -158,7 +183,18 @@ async def cut_tickets(service_now, kv_store, session_key, configuration, ci_map,
             print(sys_id)
 
 
-async def upsert_ticket(service_now, kv_store, session_key, configuration, service_team, vuln_play_name, cis, manager, is_running_local, flags):
+def cut_bad_ticket(service_now, missed_serials, flags):
+    body = 'Vulnerability Ticket Errors'
+    for service_team, vulns in missed_serials.items():
+        body += f'\n{service_team}'
+        for vuln_play, serial_numbers in vulns.items():
+            body += '\nVuln Play: ' + vuln_play + \
+                '\n'.join(serial_numbers) + '\n'
+    data = service_now.contruct_bad_ticket_data(body)
+    service_now.create_ticket(data)
+
+
+async def upsert_ticket(service_now, kv_store, service_team, vuln_play_name, cis, manager, is_running_local, flags):
     # check splunk for existing sys_id (team + vuln play)
     sys_id = None
     if is_running_local and len(flags) >= 4:
