@@ -1,0 +1,14 @@
+{
+  "session_key": "foo",
+  "configuration": {
+    "environment": "dev",
+    "ticket_title": "Operational Readiness Review Demo Test Ticket - Half Bad",
+    "ticket_description": "Bueno",
+    "ticket_impact": "3",
+    "ticket_urgency": "3",
+    "ticket_criticality": "Low",
+    "ticket_assign_to_manager": "1",
+    "ticket_custom_tag": "WIN_32K_PRIV_ESC-HIGH-CVE-2019-0803"
+  },
+  "results_file": "/home/splunk/code/splunk-sra-vuln-play/bin/test/integration/results_half_bad.csv.gz"
+}
